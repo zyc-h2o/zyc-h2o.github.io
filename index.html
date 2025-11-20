@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    
+
     <script>
         tailwind.config = {
             theme: {
@@ -20,7 +20,7 @@
                     },
                     colors: {
                         primary: '#2D3436',
-                        accent: '#0984e3', /* Changed to a blueish tone fitting for Tech/Uni */
+                        accent: '#0984e3',
                         secondary: '#74b9ff',
                         paper: '#FDFBF7',
                         surface: '#FFFFFF',
@@ -67,6 +67,13 @@
             background: #636e72;
         }
 
+        /* --- HIDE DEFAULT CURSOR --- */
+        @media (pointer: fine) {
+            html, body, a, button, input, select, textarea, .hover-target {
+                cursor: none !important;
+            }
+        }
+
         /* Glassmorphism Utilities */
         .glass {
             background: rgba(255, 255, 255, 0.7);
@@ -74,18 +81,52 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
-        
+
+        /* Updated Card Styles for 3D Effect */
+        .glass-card, .hover-target[data-cursor="large"] {
+            /* Enable 3D space */
+            transform-style: preserve-3d;
+            /* Smooth reset when mouse leaves */
+            transition: transform 0.1s ease-out, box-shadow 0.3s;
+            /* Prepare for spotlight positioning */
+            position: relative;
+            overflow: hidden; /* Keep highlight inside */
+        }
+
         .glass-card {
             background: rgba(255, 255, 255, 0.9);
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
             backdrop-filter: blur(4px);
             border: 1px solid rgba(255, 255, 255, 0.18);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .glass-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+        /* --- SPOTLIGHT HIGHLIGHT EFFECT --- */
+        /* We use ::after to create the radial gradient glow */
+        .glass-card::after,
+        .hover-target[data-cursor="large"]::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            /* Radial gradient centered at --x, --y (set by JS) */
+            background: radial-gradient(
+                600px circle at var(--x, 50%) var(--y, 50%),
+                rgba(255, 255, 255, 0.4),
+                transparent 40%
+            );
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.3s;
+            pointer-events: none; /* Don't interfere with clicks */
+            z-index: 10;
+            mix-blend-mode: overlay; /* Nice blending mode for highlights */
+        }
+
+        /* Show spotlight on hover */
+        .glass-card:hover::after,
+        .hover-target[data-cursor="large"]:hover::after {
+            opacity: 1;
         }
 
         /* Text Gradient */
@@ -106,37 +147,67 @@
             transform: translateY(0);
         }
 
-        /* Cursor follower */
-        .cursor-dot,
+        /* --- CURSOR STYLES --- */
         .cursor-outline {
             position: fixed;
             top: 0;
             left: 0;
-            transform: translate(-50%, -50%);
+            width: 32px;
+            height: 32px;
+            border: 1px solid rgba(9, 132, 227, 0.5);
             border-radius: 50%;
-            z-index: 9999;
             pointer-events: none;
+            z-index: 9999;
+            box-sizing: border-box;
+            will-change: transform, width, height, border-radius, background-color;
+            transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+                        height 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+                        border-radius 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+                        background-color 0.3s,
+                        border-color 0.3s;
+            transform: translate(-50%, -50%);
         }
+
         .cursor-dot {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 8px;
             height: 8px;
             background-color: #0984e3;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s, transform 0.3s;
         }
-        .cursor-outline {
-            width: 40px;
-            height: 40px;
-            border: 1px solid rgba(9, 132, 227, 0.5);
-            transition: width 0.2s, height 0.2s, background-color 0.2s;
+
+        /* --- CURSOR STATES --- */
+        .cursor-outline.hovered-small {
+            background-color: transparent;
+            border-color: #0984e3;
+            border-width: 2px;
         }
-        
-        body:hover .cursor-outline.hovered {
-            width: 60px;
-            height: 60px;
+
+        .cursor-outline.hovered-large {
             background-color: rgba(9, 132, 227, 0.1);
+            border-color: transparent;
+            box-shadow: 0 0 30px rgba(9, 132, 227, 0.2);
+        }
+
+        .cursor-outline.hovered-text {
+            width: 4px !important;
+            height: 24px !important;
+            border-radius: 2px !important;
+            background-color: #0984e3;
             border-color: transparent;
         }
 
-        /* Mobile Menu transition */
+        .cursor-dot.hidden-dot {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0);
+        }
+
         .mobile-menu {
             transition: transform 0.3s ease-in-out;
         }
@@ -144,9 +215,9 @@
 </head>
 <body class="bg-paper text-primary font-sans overflow-x-hidden selection:bg-accent selection:text-white relative">
 
-    <!-- Custom Cursor -->
-    <div class="cursor-dot hidden md:block"></div>
-    <div class="cursor-outline hidden md:block"></div>
+    <!-- Custom Cursor Elements -->
+    <div id="c-outline" class="cursor-outline hidden md:block"></div>
+    <div id="c-dot" class="cursor-dot hidden md:block"></div>
 
     <!-- Animated Background Shapes -->
     <div class="fixed inset-0 w-full h-full pointer-events-none overflow-hidden -z-10">
@@ -165,13 +236,14 @@
                         yichi<span class="text-accent">.</span>ai
                     </a>
                 </div>
-                
+
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex space-x-8 items-center">
                     <a href="#about" class="text-sm font-medium hover:text-accent transition-colors hover-target">About</a>
                     <a href="#blog" class="text-sm font-medium hover:text-accent transition-colors hover-target">Blog</a>
                     <a href="#projects" class="text-sm font-medium hover:text-accent transition-colors hover-target">Projects</a>
-                    <a href="#contact" class="px-5 py-2.5 bg-primary text-white rounded-full text-sm font-medium hover:bg-accent transition-all transform hover:scale-105 hover:shadow-lg hover-target">Get in touch</a>
+                    <!-- "Get in touch" button - Mark as LARGE target -->
+                    <a href="#contact" data-cursor="large" class="hover-target px-5 py-2.5 bg-primary text-white rounded-full text-sm font-medium hover:bg-accent transition-all transform hover:shadow-lg">Get in touch</a>
                 </div>
 
                 <!-- Mobile menu button -->
@@ -213,14 +285,15 @@
                         Hi, I'm <strong class="text-primary">Yichi Zhang</strong>. A Computer Science undergraduate building bridges between complex data and human experiences.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4 pt-4 animate-fade-in-up" style="animation-delay: 0.3s;">
-                        <a href="#projects" class="inline-flex justify-center items-center px-8 py-4 bg-primary text-white rounded-full font-medium hover:bg-accent transition-all transform hover:translate-y-[-2px] hover:shadow-xl hover-target">
+                        <!-- Hero Buttons - Mark as LARGE -->
+                        <a href="#projects" data-cursor="large" class="hover-target inline-flex justify-center items-center px-8 py-4 bg-primary text-white rounded-full font-medium hover:bg-accent transition-all transform hover:translate-y-[-2px] hover:shadow-xl">
                             View My Work
                         </a>
-                        <a href="https://yichi.ai" target="_blank" class="inline-flex justify-center items-center px-8 py-4 bg-white border border-gray-200 text-primary rounded-full font-medium hover:bg-gray-50 transition-all transform hover:translate-y-[-2px] hover-target">
+                        <a href="https://yichi.ai" target="_blank" data-cursor="large" class="hover-target inline-flex justify-center items-center px-8 py-4 bg-white border border-gray-200 text-primary rounded-full font-medium hover:bg-gray-50 transition-all transform hover:translate-y-[-2px]">
                             Visit My Blog
                         </a>
                     </div>
-                    
+
                     <div class="pt-12 flex items-center space-x-6 text-gray-400 animate-fade-in-up" style="animation-delay: 0.4s;">
                         <a href="#" class="hover:text-accent transition-colors hover-target" title="GitHub"><i class="fa-brands fa-github text-2xl"></i></a>
                         <a href="mailto:zhangyichi20060801@yichi.ai" class="hover:text-accent transition-colors hover-target" title="Email"><i class="fa-solid fa-envelope text-2xl"></i></a>
@@ -234,14 +307,14 @@
                         <!-- Abstract decoration background -->
                         <div class="absolute top-10 right-10 w-full h-full border-2 border-primary/10 rounded-full animate-float" style="animation-delay: 1s;"></div>
                         <div class="absolute -bottom-10 -left-10 w-2/3 h-2/3 bg-accent/5 rounded-full filter blur-2xl animate-pulse"></div>
-                        
-                        <!-- Main Image Container -->
-                        <div class="relative w-full h-full overflow-hidden rounded-[2rem] lg:rounded-tr-[100px] lg:rounded-bl-[100px] shadow-2xl glass-card p-2">
+
+                        <!-- Main Image Container - Mark as LARGE -->
+                        <div class="hover-target relative w-full h-full overflow-hidden rounded-[2rem] lg:rounded-tr-[100px] lg:rounded-bl-[100px] shadow-2xl glass-card p-2" data-cursor="large">
                             <img src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Coding Environment" class="w-full h-full object-cover rounded-[1.8rem] lg:rounded-tr-[90px] lg:rounded-bl-[90px] grayscale hover:grayscale-0 transition-all duration-500">
                         </div>
 
-                        <!-- Floating Cards -->
-                        <div class="absolute -bottom-8 left-0 lg:-left-12 glass p-4 rounded-2xl shadow-lg animate-float hover-target max-w-[220px]">
+                        <!-- Floating Cards - Mark as LARGE -->
+                        <div data-cursor="large" class="hover-target absolute -bottom-8 left-0 lg:-left-12 glass p-4 rounded-2xl shadow-lg animate-float max-w-[220px]">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
                                     <i class="fa-solid fa-database"></i>
@@ -253,7 +326,7 @@
                             </div>
                         </div>
 
-                         <div class="absolute top-20 -right-4 lg:-right-8 glass p-4 rounded-2xl shadow-lg animate-float hover-target max-w-[180px]" style="animation-delay: 1.5s;">
+                         <div data-cursor="large" class="hover-target absolute top-20 -right-4 lg:-right-8 glass p-4 rounded-2xl shadow-lg animate-float max-w-[180px]" style="animation-delay: 1.5s;">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600">
                                     <i class="fa-solid fa-camera"></i>
@@ -268,10 +341,10 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Scroll Down Indicator -->
         <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-            <a href="#about" class="text-gray-400 hover:text-primary transition-colors">
+            <a href="#about" class="text-gray-400 hover:text-primary transition-colors hover-target">
                 <i class="fa-solid fa-arrow-down"></i>
             </a>
         </div>
@@ -294,8 +367,8 @@
                                 Beyond the code, I am passionate about community building. I founded the campus forum which now serves 20% of the student body, fostering free exchange and student rights.
                             </p>
                             <p>
-                                When I'm not analyzing urban transport data or optimizing algorithms, I channel my creativity into 
-                                <span class="text-accent font-medium underline decoration-wavy decoration-accent/30">photography</span> and 
+                                When I'm not analyzing urban transport data or optimizing algorithms, I channel my creativity into
+                                <span class="text-accent font-medium underline decoration-wavy decoration-accent/30">photography</span> and
                                 <span class="text-accent font-medium underline decoration-wavy decoration-accent/30">video editing</span>, documenting the world through my lens.
                             </p>
                         </div>
@@ -319,26 +392,26 @@
                     <!-- Right: Skills Grid -->
                     <div class="lg:w-1/2 reveal" style="transition-delay: 0.2s;">
                          <div class="grid grid-cols-2 gap-4">
-                            <!-- Skill Card 1 -->
-                            <div class="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <!-- Skill Card 1 (Small hover) -->
+                            <div class="hover-target p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                                 <i class="fa-brands fa-python text-3xl text-yellow-500 mb-4"></i>
                                 <h4 class="font-bold text-lg mb-2">Data & AI</h4>
                                 <p class="text-sm text-gray-500">Python (PyTorch, NumPy), YOLO, Kalman Filters, OpenCV</p>
                             </div>
                             <!-- Skill Card 2 -->
-                            <div class="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div class="hover-target p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                                 <i class="fa-solid fa-globe text-3xl text-blue-500 mb-4"></i>
                                 <h4 class="font-bold text-lg mb-2">Web & Dev</h4>
                                 <p class="text-sm text-gray-500">JavaScript, HTML/CSS, WordPress, Linux Admin</p>
                             </div>
                             <!-- Skill Card 3 -->
-                            <div class="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div class="hover-target p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                                 <i class="fa-solid fa-camera-retro text-3xl text-purple-500 mb-4"></i>
                                 <h4 class="font-bold text-lg mb-2">Creative</h4>
                                 <p class="text-sm text-gray-500">Photography, Photoshop, Lightroom, Premiere Pro</p>
                             </div>
                             <!-- Skill Card 4 -->
-                            <div class="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div class="hover-target p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                                 <i class="fa-solid fa-language text-3xl text-green-500 mb-4"></i>
                                 <h4 class="font-bold text-lg mb-2">Languages</h4>
                                 <p class="text-sm text-gray-500">Chinese (Native), English (Proficient, DET 115)</p>
@@ -355,12 +428,12 @@
                 <div class="text-center max-w-3xl mx-auto mb-16 reveal">
                     <h2 class="text-sm font-bold uppercase tracking-widest text-accent mb-2">My Personal Blog</h2>
                     <h3 class="text-3xl lg:text-4xl font-serif font-bold mb-4">Thoughts on Tech & Life.</h3>
-                    <p class="text-gray-500">Updates from <a href="https://yichi.ai" class="text-accent underline">yichi.ai</a>. Writing about my internships, projects, and photography.</p>
+                    <p class="text-gray-500">Updates from <a href="https://yichi.ai" class="text-accent underline hover-target">yichi.ai</a>. Writing about my internships, projects, and photography.</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- Post 1 -->
-                    <article class="group glass-card rounded-2xl overflow-hidden h-full flex flex-col reveal hover-target">
+                    <!-- Post 1 - Mark as LARGE -->
+                    <article data-cursor="large" class="hover-target group glass-card rounded-2xl overflow-hidden h-full flex flex-col reveal">
                         <div class="relative overflow-hidden h-48">
                             <img src="https://images.unsplash.com/photo-1516259762381-22954d7d3ad2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Coding" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500">
                             <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide text-primary">Tech</div>
@@ -371,14 +444,14 @@
                             </div>
                             <h3 class="text-xl font-bold mb-3 group-hover:text-accent transition-colors">Deep Dive: Processing Shenzhen Metro Data</h3>
                             <p class="text-gray-600 text-sm mb-4 flex-1">How I handled 10 million+ records using Python and YOLO for object detection during my internship.</p>
-                            <a href="https://yichi.ai" class="inline-flex items-center text-sm font-semibold text-accent hover:text-primary transition-colors">
+                            <span class="inline-flex items-center text-sm font-semibold text-accent group-hover:text-primary transition-colors">
                                 Read on Blog <i class="fa-solid fa-arrow-right ml-2"></i>
-                            </a>
+                            </span>
                         </div>
                     </article>
 
-                    <!-- Post 2 -->
-                    <article class="group glass-card rounded-2xl overflow-hidden h-full flex flex-col reveal hover-target" style="transition-delay: 0.1s;">
+                    <!-- Post 2 - Mark as LARGE -->
+                    <article data-cursor="large" class="hover-target group glass-card rounded-2xl overflow-hidden h-full flex flex-col reveal" style="transition-delay: 0.1s;">
                         <div class="relative overflow-hidden h-48">
                             <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Community" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500">
                             <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide text-primary">Community</div>
@@ -389,14 +462,14 @@
                             </div>
                             <h3 class="text-xl font-bold mb-3 group-hover:text-accent transition-colors">Building a Campus Forum from Scratch</h3>
                             <p class="text-gray-600 text-sm mb-4 flex-1">Reflections on setting up a Discourse server and getting 20% of the student body to sign up.</p>
-                            <a href="https://discourse.cityudg.space" class="inline-flex items-center text-sm font-semibold text-accent hover:text-primary transition-colors">
+                            <span class="inline-flex items-center text-sm font-semibold text-accent group-hover:text-primary transition-colors">
                                 Visit Forum <i class="fa-solid fa-arrow-right ml-2"></i>
-                            </a>
+                            </span>
                         </div>
                     </article>
 
-                    <!-- Post 3 -->
-                    <article class="group glass-card rounded-2xl overflow-hidden h-full flex flex-col reveal hover-target" style="transition-delay: 0.2s;">
+                    <!-- Post 3 - Mark as LARGE -->
+                    <article data-cursor="large" class="hover-target group glass-card rounded-2xl overflow-hidden h-full flex flex-col reveal" style="transition-delay: 0.2s;">
                         <div class="relative overflow-hidden h-48">
                             <img src="https://images.unsplash.com/photo-1452587925148-ce544e77e70d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Photography" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500">
                             <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide text-primary">Hobby</div>
@@ -407,9 +480,9 @@
                             </div>
                             <h3 class="text-xl font-bold mb-3 group-hover:text-accent transition-colors">Capturing University Events</h3>
                             <p class="text-gray-600 text-sm mb-4 flex-1">My experience as a Branding Assistant and photographer for the Opening Ceremony.</p>
-                            <a href="https://yichi.ai" class="inline-flex items-center text-sm font-semibold text-accent hover:text-primary transition-colors">
+                            <span class="inline-flex items-center text-sm font-semibold text-accent group-hover:text-primary transition-colors">
                                 See Photos <i class="fa-solid fa-arrow-right ml-2"></i>
-                            </a>
+                            </span>
                         </div>
                     </article>
                 </div>
@@ -431,11 +504,11 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    <!-- Project 1 -->
-                    <div class="group relative rounded-3xl overflow-hidden shadow-xl cursor-pointer reveal hover-target">
+                    <!-- Project 1 - Mark as LARGE -->
+                    <div data-cursor="large" class="hover-target group relative rounded-3xl overflow-hidden shadow-xl cursor-pointer reveal">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 z-10 transition-opacity group-hover:opacity-90"></div>
                         <img src="https://images.unsplash.com/photo-1495576775051-8af0d146ab08?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Data Analysis" class="w-full h-[400px] object-cover transform group-hover:scale-105 transition-transform duration-700">
-                        
+
                         <div class="absolute bottom-0 left-0 p-8 z-20 w-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                             <div class="flex justify-between items-end">
                                 <div>
@@ -454,11 +527,11 @@
                         </div>
                     </div>
 
-                    <!-- Project 2 -->
-                     <div class="group relative rounded-3xl overflow-hidden shadow-xl cursor-pointer reveal hover-target" style="transition-delay: 0.1s;">
+                    <!-- Project 2 - Mark as LARGE -->
+                     <div data-cursor="large" class="hover-target group relative rounded-3xl overflow-hidden shadow-xl cursor-pointer reveal" style="transition-delay: 0.1s;">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 z-10 transition-opacity group-hover:opacity-90"></div>
                         <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Campus Forum" class="w-full h-[400px] object-cover transform group-hover:scale-105 transition-transform duration-700">
-                        
+
                         <div class="absolute bottom-0 left-0 p-8 z-20 w-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                              <div class="flex justify-between items-end">
                                 <div>
@@ -477,11 +550,11 @@
                         </div>
                     </div>
 
-                    <!-- Project 3 (Small) -->
-                    <div class="lg:col-span-2 group relative rounded-3xl overflow-hidden shadow-xl cursor-pointer reveal hover-target">
+                    <!-- Project 3 (Small) - Mark as LARGE -->
+                    <div data-cursor="large" class="lg:col-span-2 hover-target group relative rounded-3xl overflow-hidden shadow-xl cursor-pointer reveal">
                          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-80 z-10 transition-opacity group-hover:opacity-90"></div>
                         <img src="https://images.unsplash.com/photo-1505373877841-8d25f7d46678?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Branding" class="w-full h-[300px] lg:h-[350px] object-cover transform group-hover:scale-105 transition-transform duration-700">
-                        
+
                         <div class="absolute bottom-0 left-0 p-8 z-20 w-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                              <div class="flex justify-between items-end">
                                 <div>
@@ -506,7 +579,7 @@
         <section class="py-24 bg-white">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h3 class="text-3xl font-serif font-bold mb-12 text-center reveal">Journey</h3>
-                
+
                 <div class="relative border-l-2 border-gray-200 ml-4 md:ml-0 space-y-12">
                     <!-- Item 1 -->
                     <div class="relative pl-8 md:pl-12 reveal group">
@@ -554,8 +627,9 @@
                 <div class="reveal">
                     <h2 class="text-4xl md:text-6xl font-serif font-bold mb-6">Let's Connect.</h2>
                     <p class="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">I'm always open to discussing data science, web development, or creative projects. Feel free to reach out.</p>
-                    
-                    <a href="mailto:zhangyichi20060801@yichi.ai" class="inline-block bg-white text-primary font-bold py-4 px-10 rounded-full text-lg hover:bg-secondary hover:text-white transition-all transform hover:scale-105 shadow-lg hover-target">
+
+                    <!-- Large Button -->
+                    <a href="mailto:zhangyichi20060801@yichi.ai" data-cursor="large" class="hover-target inline-block bg-white text-primary font-bold py-4 px-10 rounded-full text-lg hover:bg-secondary hover:text-white transition-all transform hover:scale-105 shadow-lg">
                         Send an Email <i class="fa-regular fa-paper-plane ml-2"></i>
                     </a>
                 </div>
@@ -574,37 +648,158 @@
     </main>
 
     <script>
-        // --- Custom Cursor Logic ---
-        const cursorDot = document.querySelector('.cursor-dot');
-        const cursorOutline = document.querySelector('.cursor-outline');
-        
-        // Only activate custom cursor on non-touch devices
+        // --- REWRITTEN CURSOR LOGIC & 3D TILT EFFECT ---
+
+        // Elements
+        const cursorDot = document.getElementById('c-dot');
+        const cursorOutline = document.getElementById('c-outline');
+
+        // State
+        const cursorState = {
+            mouseX: 0,
+            mouseY: 0,
+            outlineX: 0,
+            outlineY: 0,
+            isSnapped: false,
+            snapX: 0,
+            snapY: 0
+        };
+
+        // Current Active 3D Element
+        let active3DElement = null;
+
+        // Mouse Movement Tracker
+        window.addEventListener('mousemove', (e) => {
+            cursorState.mouseX = e.clientX;
+            cursorState.mouseY = e.clientY;
+
+            // 1. Move the DOT immediately
+            cursorDot.style.left = `${e.clientX}px`;
+            cursorDot.style.top = `${e.clientY}px`;
+
+            // 2. Detection Logic for HOVER
+            const target = e.target;
+            const interactive = target.closest('.hover-target, a, button, .card, .glass-card');
+            const isText = target.matches('p, span, h1, h2, h3, h4, h5, h6, li, td, th, strong, em, .prose *');
+
+            // --- 3D TILT & HIGHLIGHT LOGIC ---
+            // Handle Tilt Reset if we moved out of the previous element
+            if (active3DElement && (!interactive || interactive !== active3DElement)) {
+                active3DElement.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                active3DElement = null;
+            }
+
+            if (interactive) {
+                // Determine if this element supports 3D effects (Cards & Large Buttons)
+                const isLarge = interactive.getAttribute('data-cursor') === 'large';
+                const isCard = interactive.classList.contains('glass-card');
+
+                if (isLarge || isCard) {
+                    active3DElement = interactive;
+
+                    const rect = interactive.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    // 1. Update Spotlight Position (CSS Variables)
+                    interactive.style.setProperty('--x', `${x}px`);
+                    interactive.style.setProperty('--y', `${y}px`);
+
+                    // 2. Calculate 3D Tilt
+                    // Center of element
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+
+                    // Values between -1 and 1
+                    const rotateX = ((y - centerY) / centerY) * -5; // Max 5deg tilt
+                    const rotateY = ((x - centerX) / centerX) * 5;
+
+                    interactive.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                }
+
+                // --- CURSOR SNAPPING LOGIC ---
+                const rect = interactive.getBoundingClientRect();
+                const style = window.getComputedStyle(interactive);
+
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                cursorState.isSnapped = true;
+                cursorState.snapX = centerX;
+                cursorState.snapY = centerY;
+
+                cursorDot.classList.add('hidden-dot');
+
+                if (isLarge || isCard) {
+                    cursorOutline.classList.add('hovered-large');
+                    cursorOutline.classList.remove('hovered-small', 'hovered-text');
+
+                    cursorOutline.style.width = `${rect.width}px`;
+                    cursorOutline.style.height = `${rect.height}px`;
+                    cursorOutline.style.borderRadius = style.borderRadius;
+                } else {
+                    cursorOutline.classList.add('hovered-small');
+                    cursorOutline.classList.remove('hovered-large', 'hovered-text');
+
+                    cursorOutline.style.width = `${rect.width + 12}px`;
+                    cursorOutline.style.height = `${rect.height + 12}px`;
+
+                    const rad = parseFloat(style.borderRadius);
+                    if (style.borderRadius.includes('%') || rad > 100) {
+                         cursorOutline.style.borderRadius = '9999px';
+                    } else {
+                         cursorOutline.style.borderRadius = (rad > 0 ? rad + 6 : 8) + 'px';
+                    }
+                }
+
+            } else if (isText) {
+                cursorState.isSnapped = false;
+                cursorDot.classList.add('hidden-dot');
+
+                cursorOutline.classList.add('hovered-text');
+                cursorOutline.classList.remove('hovered-small', 'hovered-large');
+
+                cursorOutline.style.width = '';
+                cursorOutline.style.height = '';
+                cursorOutline.style.borderRadius = '';
+
+            } else {
+                cursorState.isSnapped = false;
+                cursorDot.classList.remove('hidden-dot');
+
+                cursorOutline.classList.remove('hovered-small', 'hovered-large', 'hovered-text');
+
+                cursorOutline.style.width = '32px';
+                cursorOutline.style.height = '32px';
+                cursorOutline.style.borderRadius = '50%';
+            }
+        });
+
+        // Animation Loop
+        function animateCursor() {
+            let targetX = cursorState.mouseX;
+            let targetY = cursorState.mouseY;
+
+            if (cursorState.isSnapped) {
+                targetX = cursorState.snapX;
+                targetY = cursorState.snapY;
+            }
+
+            const lerpFactor = cursorOutline.classList.contains('hovered-text') ? 0.3 : 0.15;
+
+            cursorState.outlineX += (targetX - cursorState.outlineX) * lerpFactor;
+            cursorState.outlineY += (targetY - cursorState.outlineY) * lerpFactor;
+
+            cursorOutline.style.transform = `translate3d(${cursorState.outlineX}px, ${cursorState.outlineY}px, 0) translate(-50%, -50%)`;
+
+            requestAnimationFrame(animateCursor);
+        }
+
         if (window.matchMedia("(pointer: fine)").matches) {
-            window.addEventListener("mousemove", function (e) {
-                const posX = e.clientX;
-                const posY = e.clientY;
-
-                // Dot follows instantly
-                cursorDot.style.left = `${posX}px`;
-                cursorDot.style.top = `${posY}px`;
-
-                // Outline follows with delay (using animate for smooth lag)
-                cursorOutline.animate({
-                    left: `${posX}px`,
-                    top: `${posY}px`
-                }, { duration: 500, fill: "forwards" });
-            });
-
-            // Add hover effect to interactive elements
-            const hoverTargets = document.querySelectorAll('.hover-target, a, button, .card');
-            hoverTargets.forEach(target => {
-                target.addEventListener('mouseenter', () => {
-                    cursorOutline.classList.add('hovered');
-                });
-                target.addEventListener('mouseleave', () => {
-                    cursorOutline.classList.remove('hovered');
-                });
-            });
+            animateCursor();
+        } else {
+            cursorDot.style.display = 'none';
+            cursorOutline.style.display = 'none';
         }
 
         // --- Navbar Blur on Scroll ---
@@ -625,12 +820,12 @@
 
         function toggleMenu() {
             menu.classList.toggle('translate-x-full');
-            document.body.classList.toggle('overflow-hidden'); // Prevent scrolling when menu is open
+            document.body.classList.toggle('overflow-hidden');
         }
 
         btn.addEventListener('click', toggleMenu);
         closeBtn.addEventListener('click', toggleMenu);
-        
+
         mobileLinks.forEach(link => {
             link.addEventListener('click', toggleMenu);
         });
@@ -645,8 +840,6 @@
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('active');
-                    // Optional: Stop observing once revealed
-                    // observer.unobserve(entry.target); 
                 }
             });
         }, observerOptions);
@@ -658,9 +851,14 @@
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
+                const targetId = this.getAttribute('href');
+                if(targetId === '#') return;
+                const targetElement = document.querySelector(targetId);
+                if(targetElement){
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
             });
         });
 
