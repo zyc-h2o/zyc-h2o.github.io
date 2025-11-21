@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="zh-CN" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,6 +44,11 @@
                         fadeInUp: {
                             '0%': { opacity: '0', transform: 'translateY(20px)' },
                             '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        // Mobile Menu Animation
+                        slideInRight: {
+                            '0%': { opacity: '0', transform: 'translateX(50px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
                         }
                     }
                 }
@@ -67,7 +72,7 @@
             background: #636e72;
         }
 
-        /* --- HIDE DEFAULT CURSOR --- */
+        /* --- HIDE DEFAULT CURSOR (Only on fine pointer devices) --- */
         @media (pointer: fine) {
             html, body, a, button, input, select, textarea, .hover-target {
                 cursor: none !important;
@@ -82,15 +87,40 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
-        /* Updated Card Styles for 3D Effect */
+        /* 3D Card Styles */
         .glass-card, .hover-target[data-cursor="large"] {
-            /* Enable 3D space */
             transform-style: preserve-3d;
-            /* Smooth reset when mouse leaves */
-            transition: transform 0.1s ease-out, box-shadow 0.3s;
-            /* Prepare for spotlight positioning */
+            /* Removed transition here to allow real-time JS updates without lag */
+            /* transition: transform 0.1s ease-out; <--- Removed for smoother frame-by-frame updates */
             position: relative;
-            overflow: hidden; /* Keep highlight inside */
+            overflow: hidden;
+            will-change: transform;
+        }
+
+        /* Base Style for Spotlight */
+        .glass-card::after,
+        .hover-target[data-cursor="large"]::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(
+                600px circle at var(--x, 50%) var(--y, 50%),
+                rgba(255, 255, 255, 0.5),
+                transparent 40%
+            );
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 10;
+            mix-blend-mode: overlay;
+        }
+
+        /* Show spotlight on hover (Desktop only) */
+        @media (pointer: fine) {
+            .glass-card:hover::after,
+            .hover-target[data-cursor="large"]:hover::after {
+                opacity: 1;
+            }
         }
 
         .glass-card {
@@ -98,35 +128,6 @@
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
             backdrop-filter: blur(4px);
             border: 1px solid rgba(255, 255, 255, 0.18);
-        }
-
-        /* --- SPOTLIGHT HIGHLIGHT EFFECT --- */
-        /* We use ::after to create the radial gradient glow */
-        .glass-card::after,
-        .hover-target[data-cursor="large"]::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            /* Radial gradient centered at --x, --y (set by JS) */
-            background: radial-gradient(
-                600px circle at var(--x, 50%) var(--y, 50%),
-                rgba(255, 255, 255, 0.4),
-                transparent 40%
-            );
-            opacity: 0; /* Hidden by default */
-            transition: opacity 0.3s;
-            pointer-events: none; /* Don't interfere with clicks */
-            z-index: 10;
-            mix-blend-mode: overlay; /* Nice blending mode for highlights */
-        }
-
-        /* Show spotlight on hover */
-        .glass-card:hover::after,
-        .hover-target[data-cursor="large"]:hover::after {
-            opacity: 1;
         }
 
         /* Text Gradient */
@@ -150,10 +151,8 @@
         /* --- CURSOR STYLES --- */
         .cursor-outline {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 32px;
-            height: 32px;
+            top: 0; left: 0;
+            width: 32px; height: 32px;
             border: 1px solid rgba(9, 132, 227, 0.5);
             border-radius: 50%;
             pointer-events: none;
@@ -170,10 +169,8 @@
 
         .cursor-dot {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 8px;
-            height: 8px;
+            top: 0; left: 0;
+            width: 8px; height: 8px;
             background-color: #0984e3;
             border-radius: 50%;
             pointer-events: none;
@@ -182,19 +179,17 @@
             transition: opacity 0.3s, transform 0.3s;
         }
 
-        /* --- CURSOR STATES --- */
+        /* States */
         .cursor-outline.hovered-small {
             background-color: transparent;
             border-color: #0984e3;
             border-width: 2px;
         }
-
         .cursor-outline.hovered-large {
             background-color: rgba(9, 132, 227, 0.1);
             border-color: transparent;
             box-shadow: 0 0 30px rgba(9, 132, 227, 0.2);
         }
-
         .cursor-outline.hovered-text {
             width: 4px !important;
             height: 24px !important;
@@ -202,20 +197,38 @@
             background-color: #0984e3;
             border-color: transparent;
         }
-
         .cursor-dot.hidden-dot {
             opacity: 0;
             transform: translate(-50%, -50%) scale(0);
         }
 
+        /* --- MOBILE MENU ANIMATIONS --- */
         .mobile-menu {
-            transition: transform 0.3s ease-in-out;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s;
+            visibility: hidden;
+            opacity: 0;
         }
+        .mobile-menu.open {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Staggered Animation for Links */
+        .mobile-menu.open .mobile-link {
+            animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            opacity: 0; /* Start hidden */
+        }
+        .mobile-menu.open .mobile-link:nth-child(1) { animation-delay: 0.1s; }
+        .mobile-menu.open .mobile-link:nth-child(2) { animation-delay: 0.15s; }
+        .mobile-menu.open .mobile-link:nth-child(3) { animation-delay: 0.2s; }
+        .mobile-menu.open .mobile-link:nth-child(4) { animation-delay: 0.25s; }
+        .mobile-menu.open .mobile-link:nth-child(5) { animation-delay: 0.3s; }
+
     </style>
 </head>
 <body class="bg-paper text-primary font-sans overflow-x-hidden selection:bg-accent selection:text-white relative">
 
-    <!-- Custom Cursor Elements -->
+    <!-- Custom Cursor Elements (Only rendered on Desktop via JS logic) -->
     <div id="c-outline" class="cursor-outline hidden md:block"></div>
     <div id="c-dot" class="cursor-dot hidden md:block"></div>
 
@@ -242,13 +255,12 @@
                     <a href="#about" class="text-sm font-medium hover:text-accent transition-colors hover-target">About</a>
                     <a href="#blog" class="text-sm font-medium hover:text-accent transition-colors hover-target">Blog</a>
                     <a href="#projects" class="text-sm font-medium hover:text-accent transition-colors hover-target">Projects</a>
-                    <!-- "Get in touch" button - Mark as LARGE target -->
                     <a href="#contact" data-cursor="large" class="hover-target px-5 py-2.5 bg-primary text-white rounded-full text-sm font-medium hover:bg-accent transition-all transform hover:shadow-lg">Get in touch</a>
                 </div>
 
                 <!-- Mobile menu button -->
                 <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-btn" class="text-primary hover:text-accent focus:outline-none hover-target">
+                    <button id="mobile-menu-btn" class="text-primary hover:text-accent focus:outline-none z-50 relative">
                         <i class="fa-solid fa-bars text-2xl"></i>
                     </button>
                 </div>
@@ -256,14 +268,16 @@
         </div>
 
         <!-- Mobile Menu Panel -->
-        <div id="mobile-menu" class="fixed inset-0 z-40 bg-white transform translate-x-full mobile-menu md:hidden flex flex-col justify-center items-center space-y-8">
-            <button id="close-menu-btn" class="absolute top-6 right-6 text-2xl hover:text-accent">
-                <i class="fa-solid fa-times"></i>
-            </button>
-            <a href="#about" class="text-3xl font-serif mobile-link">About</a>
-            <a href="#blog" class="text-3xl font-serif mobile-link">Blog</a>
-            <a href="#projects" class="text-3xl font-serif mobile-link">Projects</a>
-            <a href="#contact" class="text-3xl font-serif mobile-link text-accent">Contact</a>
+        <!-- Enhanced Blur and Animation Wrapper -->
+        <div id="mobile-menu" class="fixed inset-0 z-40 bg-white/70 backdrop-blur-xl mobile-menu flex flex-col justify-center items-center space-y-8 md:hidden">
+            <!-- Close button is handled by the toggle button state logic or we can add a specific close button -->
+            <!-- Links wrapper for animation targeting -->
+            <div class="flex flex-col items-center space-y-8">
+                <a href="#about" class="text-3xl font-serif mobile-link hover:text-accent transition-colors">About</a>
+                <a href="#blog" class="text-3xl font-serif mobile-link hover:text-accent transition-colors">Blog</a>
+                <a href="#projects" class="text-3xl font-serif mobile-link hover:text-accent transition-colors">Projects</a>
+                <a href="#contact" class="text-3xl font-serif mobile-link text-accent font-bold">Contact</a>
+            </div>
         </div>
     </nav>
 
@@ -285,7 +299,7 @@
                         Hi, I'm <strong class="text-primary">Yichi Zhang</strong>. A Computer Science undergraduate building bridges between complex data and human experiences.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4 pt-4 animate-fade-in-up" style="animation-delay: 0.3s;">
-                        <!-- Hero Buttons - Mark as LARGE -->
+                        <!-- Hero Buttons -->
                         <a href="#projects" data-cursor="large" class="hover-target inline-flex justify-center items-center px-8 py-4 bg-primary text-white rounded-full font-medium hover:bg-accent transition-all transform hover:translate-y-[-2px] hover:shadow-xl">
                             View My Work
                         </a>
@@ -313,7 +327,7 @@
                             <img src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Coding Environment" class="w-full h-full object-cover rounded-[1.8rem] lg:rounded-tr-[90px] lg:rounded-bl-[90px] grayscale hover:grayscale-0 transition-all duration-500">
                         </div>
 
-                        <!-- Floating Cards - Mark as LARGE -->
+                        <!-- Floating Cards -->
                         <div data-cursor="large" class="hover-target absolute -bottom-8 left-0 lg:-left-12 glass p-4 rounded-2xl shadow-lg animate-float max-w-[220px]">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
@@ -432,7 +446,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- Post 1 - Mark as LARGE -->
+                    <!-- Post 1 -->
                     <article data-cursor="large" class="hover-target group glass-card rounded-2xl overflow-hidden h-full flex flex-col reveal">
                         <div class="relative overflow-hidden h-48">
                             <img src="https://images.unsplash.com/photo-1516259762381-22954d7d3ad2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Coding" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500">
@@ -450,7 +464,7 @@
                         </div>
                     </article>
 
-                    <!-- Post 2 - Mark as LARGE -->
+                    <!-- Post 2 -->
                     <article data-cursor="large" class="hover-target group glass-card rounded-2xl overflow-hidden h-full flex flex-col reveal" style="transition-delay: 0.1s;">
                         <div class="relative overflow-hidden h-48">
                             <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Community" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500">
@@ -468,7 +482,7 @@
                         </div>
                     </article>
 
-                    <!-- Post 3 - Mark as LARGE -->
+                    <!-- Post 3 -->
                     <article data-cursor="large" class="hover-target group glass-card rounded-2xl overflow-hidden h-full flex flex-col reveal" style="transition-delay: 0.2s;">
                         <div class="relative overflow-hidden h-48">
                             <img src="https://images.unsplash.com/photo-1452587925148-ce544e77e70d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Photography" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500">
@@ -504,10 +518,11 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    <!-- Project 1 - Mark as LARGE -->
+                    <!-- Project 1 (Fixed Image) -->
                     <div data-cursor="large" class="hover-target group relative rounded-3xl overflow-hidden shadow-xl cursor-pointer reveal">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 z-10 transition-opacity group-hover:opacity-90"></div>
-                        <img src="https://images.unsplash.com/photo-1495576775051-8af0d146ab08?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Data Analysis" class="w-full h-[400px] object-cover transform group-hover:scale-105 transition-transform duration-700">
+                        <!-- Replaced Image URL -->
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Metro Data Analysis" class="w-full h-[400px] object-cover transform group-hover:scale-105 transition-transform duration-700">
 
                         <div class="absolute bottom-0 left-0 p-8 z-20 w-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                             <div class="flex justify-between items-end">
@@ -527,7 +542,7 @@
                         </div>
                     </div>
 
-                    <!-- Project 2 - Mark as LARGE -->
+                    <!-- Project 2 -->
                      <div data-cursor="large" class="hover-target group relative rounded-3xl overflow-hidden shadow-xl cursor-pointer reveal" style="transition-delay: 0.1s;">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 z-10 transition-opacity group-hover:opacity-90"></div>
                         <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Campus Forum" class="w-full h-[400px] object-cover transform group-hover:scale-105 transition-transform duration-700">
@@ -550,7 +565,7 @@
                         </div>
                     </div>
 
-                    <!-- Project 3 (Small) - Mark as LARGE -->
+                    <!-- Project 3 -->
                     <div data-cursor="large" class="lg:col-span-2 hover-target group relative rounded-3xl overflow-hidden shadow-xl cursor-pointer reveal">
                          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-80 z-10 transition-opacity group-hover:opacity-90"></div>
                         <img src="https://images.unsplash.com/photo-1505373877841-8d25f7d46678?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Branding" class="w-full h-[300px] lg:h-[350px] object-cover transform group-hover:scale-105 transition-transform duration-700">
@@ -648,158 +663,168 @@
     </main>
 
     <script>
-        // --- REWRITTEN CURSOR LOGIC & 3D TILT EFFECT ---
-
-        // Elements
-        const cursorDot = document.getElementById('c-dot');
-        const cursorOutline = document.getElementById('c-outline');
+        // --- SAFE CURSOR INIT FOR MOBILE/DESKTOP ---
 
         // State
         const cursorState = {
-            mouseX: 0,
-            mouseY: 0,
-            outlineX: 0,
-            outlineY: 0,
+            mouseX: -100, // Start off-screen
+            mouseY: -100,
+            outlineX: -100,
+            outlineY: -100,
             isSnapped: false,
             snapX: 0,
             snapY: 0
         };
 
-        // Current Active 3D Element
+        // Check capability
+        const isFinePointer = window.matchMedia("(pointer: fine)").matches;
+
+        const cursorDot = document.getElementById('c-dot');
+        const cursorOutline = document.getElementById('c-outline');
         let active3DElement = null;
 
-        // Mouse Movement Tracker
-        window.addEventListener('mousemove', (e) => {
-            cursorState.mouseX = e.clientX;
-            cursorState.mouseY = e.clientY;
+        if (!isFinePointer) {
+            // MOBILE: Ensure cursor is strictly removed
+            if(cursorDot) cursorDot.remove();
+            if(cursorOutline) cursorOutline.remove();
+        } else {
 
-            // 1. Move the DOT immediately
-            cursorDot.style.left = `${e.clientX}px`;
-            cursorDot.style.top = `${e.clientY}px`;
+            // DESKTOP: Logic
 
-            // 2. Detection Logic for HOVER
-            const target = e.target;
-            const interactive = target.closest('.hover-target, a, button, .card, .glass-card');
-            const isText = target.matches('p, span, h1, h2, h3, h4, h5, h6, li, td, th, strong, em, .prose *');
+            // 1. Mouse Movement & State Update
+            window.addEventListener('mousemove', (e) => {
+                cursorState.mouseX = e.clientX;
+                cursorState.mouseY = e.clientY;
 
-            // --- 3D TILT & HIGHLIGHT LOGIC ---
-            // Handle Tilt Reset if we moved out of the previous element
-            if (active3DElement && (!interactive || interactive !== active3DElement)) {
-                active3DElement.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-                active3DElement = null;
-            }
+                // Immediate Dot Movement
+                cursorDot.style.left = `${e.clientX}px`;
+                cursorDot.style.top = `${e.clientY}px`;
 
-            if (interactive) {
-                // Determine if this element supports 3D effects (Cards & Large Buttons)
-                const isLarge = interactive.getAttribute('data-cursor') === 'large';
-                const isCard = interactive.classList.contains('glass-card');
+                // Update logic (Moved to animation loop for sync, but detection happens here)
+                updateCursorTarget(e.target, e.clientX, e.clientY);
+            });
 
-                if (isLarge || isCard) {
-                    active3DElement = interactive;
-
-                    const rect = interactive.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-
-                    // 1. Update Spotlight Position (CSS Variables)
-                    interactive.style.setProperty('--x', `${x}px`);
-                    interactive.style.setProperty('--y', `${y}px`);
-
-                    // 2. Calculate 3D Tilt
-                    // Center of element
-                    const centerX = rect.width / 2;
-                    const centerY = rect.height / 2;
-
-                    // Values between -1 and 1
-                    const rotateX = ((y - centerY) / centerY) * -5; // Max 5deg tilt
-                    const rotateY = ((x - centerX) / centerX) * 5;
-
-                    interactive.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-                }
-
-                // --- CURSOR SNAPPING LOGIC ---
-                const rect = interactive.getBoundingClientRect();
-                const style = window.getComputedStyle(interactive);
-
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-
-                cursorState.isSnapped = true;
-                cursorState.snapX = centerX;
-                cursorState.snapY = centerY;
-
-                cursorDot.classList.add('hidden-dot');
-
-                if (isLarge || isCard) {
-                    cursorOutline.classList.add('hovered-large');
-                    cursorOutline.classList.remove('hovered-small', 'hovered-text');
-
-                    cursorOutline.style.width = `${rect.width}px`;
-                    cursorOutline.style.height = `${rect.height}px`;
-                    cursorOutline.style.borderRadius = style.borderRadius;
-                } else {
-                    cursorOutline.classList.add('hovered-small');
-                    cursorOutline.classList.remove('hovered-large', 'hovered-text');
-
-                    cursorOutline.style.width = `${rect.width + 12}px`;
-                    cursorOutline.style.height = `${rect.height + 12}px`;
-
-                    const rad = parseFloat(style.borderRadius);
-                    if (style.borderRadius.includes('%') || rad > 100) {
-                         cursorOutline.style.borderRadius = '9999px';
-                    } else {
-                         cursorOutline.style.borderRadius = (rad > 0 ? rad + 6 : 8) + 'px';
+            // 2. Real-time Scroll Update for 3D/Highlight
+            // Even if mouse doesn't move, scrolling moves elements under it
+            window.addEventListener('scroll', () => {
+                if(cursorState.mouseX > 0) {
+                    const elementUnderMouse = document.elementFromPoint(cursorState.mouseX, cursorState.mouseY);
+                    if(elementUnderMouse) {
+                        updateCursorTarget(elementUnderMouse, cursorState.mouseX, cursorState.mouseY);
                     }
                 }
+            });
 
-            } else if (isText) {
-                cursorState.isSnapped = false;
-                cursorDot.classList.add('hidden-dot');
+            // Core Logic: Determines what we are hovering and applies effects
+            function updateCursorTarget(target, clientX, clientY) {
+                const interactive = target.closest('.hover-target, a, button, .card, .glass-card');
+                const isText = target.matches('p, span, h1, h2, h3, h4, h5, h6, li, td, th, strong, em, .prose *');
 
-                cursorOutline.classList.add('hovered-text');
-                cursorOutline.classList.remove('hovered-small', 'hovered-large');
+                // --- 3D TILT & HIGHLIGHT CLEANUP ---
+                if (active3DElement && (!interactive || interactive !== active3DElement)) {
+                    active3DElement.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                    active3DElement = null;
+                }
 
-                cursorOutline.style.width = '';
-                cursorOutline.style.height = '';
-                cursorOutline.style.borderRadius = '';
+                if (interactive) {
+                    // --- INTERACTIVE ELEMENT LOGIC ---
+                    const isLarge = interactive.getAttribute('data-cursor') === 'large';
+                    const isCard = interactive.classList.contains('glass-card');
 
-            } else {
-                cursorState.isSnapped = false;
-                cursorDot.classList.remove('hidden-dot');
+                    if (isLarge || isCard) {
+                        active3DElement = interactive;
+                        const rect = interactive.getBoundingClientRect();
 
-                cursorOutline.classList.remove('hovered-small', 'hovered-large', 'hovered-text');
+                        // Update Spotlight Position Real-time
+                        const x = clientX - rect.left;
+                        const y = clientY - rect.top;
+                        interactive.style.setProperty('--x', `${x}px`);
+                        interactive.style.setProperty('--y', `${y}px`);
 
-                cursorOutline.style.width = '32px';
-                cursorOutline.style.height = '32px';
-                cursorOutline.style.borderRadius = '50%';
+                        // 3D Tilt Calculation
+                        const centerX = rect.width / 2;
+                        const centerY = rect.height / 2;
+                        const rotateX = ((y - centerY) / centerY) * -5;
+                        const rotateY = ((x - centerX) / centerX) * 5;
+
+                        interactive.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                    }
+
+                    // --- CURSOR SNAPPING ---
+                    const rect = interactive.getBoundingClientRect();
+                    const style = window.getComputedStyle(interactive);
+
+                    cursorState.isSnapped = true;
+                    cursorState.snapX = rect.left + rect.width / 2;
+                    cursorState.snapY = rect.top + rect.height / 2;
+
+                    cursorDot.classList.add('hidden-dot');
+
+                    if (isLarge || isCard) {
+                        cursorOutline.classList.add('hovered-large');
+                        cursorOutline.classList.remove('hovered-small', 'hovered-text');
+                        cursorOutline.style.width = `${rect.width}px`;
+                        cursorOutline.style.height = `${rect.height}px`;
+                        cursorOutline.style.borderRadius = style.borderRadius;
+                    } else {
+                        cursorOutline.classList.add('hovered-small');
+                        cursorOutline.classList.remove('hovered-large', 'hovered-text');
+                        cursorOutline.style.width = `${rect.width + 12}px`;
+                        cursorOutline.style.height = `${rect.height + 12}px`;
+
+                        const rad = parseFloat(style.borderRadius);
+                        if (style.borderRadius.includes('%') || rad > 100) {
+                             cursorOutline.style.borderRadius = '9999px';
+                        } else {
+                             cursorOutline.style.borderRadius = (rad > 0 ? rad + 6 : 8) + 'px';
+                        }
+                    }
+
+                } else if (isText) {
+                    // --- TEXT LOGIC ---
+                    cursorState.isSnapped = false;
+                    cursorDot.classList.add('hidden-dot');
+
+                    cursorOutline.classList.add('hovered-text');
+                    cursorOutline.classList.remove('hovered-small', 'hovered-large');
+                    cursorOutline.style.width = '';
+                    cursorOutline.style.height = '';
+                    cursorOutline.style.borderRadius = '';
+
+                } else {
+                    // --- DEFAULT LOGIC ---
+                    cursorState.isSnapped = false;
+                    cursorDot.classList.remove('hidden-dot');
+
+                    cursorOutline.classList.remove('hovered-small', 'hovered-large', 'hovered-text');
+                    cursorOutline.style.width = '32px';
+                    cursorOutline.style.height = '32px';
+                    cursorOutline.style.borderRadius = '50%';
+                }
             }
-        });
 
-        // Animation Loop
-        function animateCursor() {
-            let targetX = cursorState.mouseX;
-            let targetY = cursorState.mouseY;
+            // Animation Loop for Smooth Follow
+            function animateCursor() {
+                let targetX = cursorState.mouseX;
+                let targetY = cursorState.mouseY;
 
-            if (cursorState.isSnapped) {
-                targetX = cursorState.snapX;
-                targetY = cursorState.snapY;
+                if (cursorState.isSnapped) {
+                    targetX = cursorState.snapX;
+                    targetY = cursorState.snapY;
+                }
+
+                const lerpFactor = cursorOutline.classList.contains('hovered-text') ? 0.3 : 0.15;
+
+                // Simple Linear Interpolation
+                cursorState.outlineX += (targetX - cursorState.outlineX) * lerpFactor;
+                cursorState.outlineY += (targetY - cursorState.outlineY) * lerpFactor;
+
+                cursorOutline.style.transform = `translate3d(${cursorState.outlineX}px, ${cursorState.outlineY}px, 0) translate(-50%, -50%)`;
+
+                requestAnimationFrame(animateCursor);
             }
 
-            const lerpFactor = cursorOutline.classList.contains('hovered-text') ? 0.3 : 0.15;
-
-            cursorState.outlineX += (targetX - cursorState.outlineX) * lerpFactor;
-            cursorState.outlineY += (targetY - cursorState.outlineY) * lerpFactor;
-
-            cursorOutline.style.transform = `translate3d(${cursorState.outlineX}px, ${cursorState.outlineY}px, 0) translate(-50%, -50%)`;
-
-            requestAnimationFrame(animateCursor);
-        }
-
-        if (window.matchMedia("(pointer: fine)").matches) {
             animateCursor();
-        } else {
-            cursorDot.style.display = 'none';
-            cursorOutline.style.display = 'none';
         }
 
         // --- Navbar Blur on Scroll ---
@@ -812,22 +837,40 @@
             }
         });
 
-        // --- Mobile Menu Toggle ---
+        // --- Mobile Menu Toggle with Animation ---
         const btn = document.getElementById('mobile-menu-btn');
         const menu = document.getElementById('mobile-menu');
-        const closeBtn = document.getElementById('close-menu-btn');
         const mobileLinks = document.querySelectorAll('.mobile-link');
+        let isMenuOpen = false;
 
         function toggleMenu() {
-            menu.classList.toggle('translate-x-full');
-            document.body.classList.toggle('overflow-hidden');
+            isMenuOpen = !isMenuOpen;
+            if (isMenuOpen) {
+                menu.classList.remove('hidden'); // Ensure it's display block first
+                // Trigger reflow
+                void menu.offsetWidth;
+                menu.classList.add('open');
+
+                // Change icon
+                btn.innerHTML = '<i class="fa-solid fa-times text-2xl"></i>';
+                document.body.classList.add('overflow-hidden');
+            } else {
+                menu.classList.remove('open');
+                // Change icon back
+                btn.innerHTML = '<i class="fa-solid fa-bars text-2xl"></i>';
+                document.body.classList.remove('overflow-hidden');
+
+                // Wait for transition to finish before hiding?
+                // CSS transition handles opacity, so it's fine.
+            }
         }
 
         btn.addEventListener('click', toggleMenu);
-        closeBtn.addEventListener('click', toggleMenu);
 
         mobileLinks.forEach(link => {
-            link.addEventListener('click', toggleMenu);
+            link.addEventListener('click', () => {
+                if(isMenuOpen) toggleMenu();
+            });
         });
 
         // --- Intersection Observer for Scroll Animations ---
@@ -847,7 +890,7 @@
         const revealElements = document.querySelectorAll('.reveal');
         revealElements.forEach(el => observer.observe(el));
 
-        // --- Smooth Scrolling for Anchor Links ---
+        // --- Smooth Scrolling ---
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -861,7 +904,6 @@
                 }
             });
         });
-
     </script>
 </body>
 </html>
